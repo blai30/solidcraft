@@ -762,7 +762,7 @@ mod tests {
             let mut visuals = super::visuals(dark);
             visuals.text_options.subpixel_binning |= binning;
             ctx.set_visuals(visuals);
-            let _ = ctx.run_ui(egui::RawInput::default(), |_| {});
+            ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
             let galley = ctx.fonts_mut(|f| f.layout_no_wrap("l".repeat(40), egui::FontId::proportional(12.5), egui::Color32::WHITE));
             galley.rows.iter().flat_map(|r| r.glyphs.iter().map(|g| g.uv_rect.min)).collect::<std::collections::HashSet<_>>().len()
         };
