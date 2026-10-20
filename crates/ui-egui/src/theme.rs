@@ -591,6 +591,10 @@ pub fn set_dark(dark: bool) {
 fn visuals(dark: bool) -> egui::Visuals {
     let t = Tokens::themed(dark, vision());
     let mut v = if dark { egui::Visuals::dark() } else { egui::Visuals::light() };
+    // Glyphs on whole pixels: binning draws each hinted glyph again at ¼, ½ and ¾ pixel offsets,
+    // which moves the stems hinting put on the pixel grid back off it, so on a 100–150 % display
+    // every stem was a two-pixel grey smear and all text looked blurry.
+    v.text_options.subpixel_binning = false;
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
     v.window_stroke = Stroke::new(1.0, t.border);
@@ -744,6 +748,27 @@ mod tests {
         for t in [super::Tokens::light(), super::Tokens::dark()] {
             assert!(luma(t.heading_bg) < luma(t.subheading_bg), "{t:?}");
             assert!(luma(t.subheading_bg) < luma(t.dialog_bg), "{t:?}");
+        }
+    }
+
+    /// Every glyph is drawn from one bitmap on whole pixels, not again at a fraction of a pixel
+    /// that smears its hinted stems: text looked blurry at 100–150 % display scale.
+    #[test]
+    fn text_glyphs_sit_on_whole_pixels() {
+        // How many atlas bitmaps a line of one repeated glyph is drawn from.
+        let bitmaps = |dark: bool, binning: bool| {
+            let ctx = egui::Context::default();
+            ctx.set_theme(if dark { egui::Theme::Dark } else { egui::Theme::Light });
+            let mut visuals = super::visuals(dark);
+            visuals.text_options.subpixel_binning |= binning;
+            ctx.set_visuals(visuals);
+            let _ = ctx.run_ui(egui::RawInput::default(), |_| {});
+            let galley = ctx.fonts_mut(|f| f.layout_no_wrap("l".repeat(40), egui::FontId::proportional(12.5), egui::Color32::WHITE));
+            galley.rows.iter().flat_map(|r| r.glyphs.iter().map(|g| g.uv_rect.min)).collect::<std::collections::HashSet<_>>().len()
+        };
+        for dark in [false, true] {
+            assert!(bitmaps(dark, true) > 1, "the glyphs must fall between pixels for this test to mean anything");
+            assert_eq!(bitmaps(dark, false), 1);
         }
     }
 }
