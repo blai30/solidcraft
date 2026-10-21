@@ -591,7 +591,7 @@ pub fn set_dark(dark: bool) {
 fn visuals(dark: bool) -> egui::Visuals {
     let t = Tokens::themed(dark, vision());
     let mut v = if dark { egui::Visuals::dark() } else { egui::Visuals::light() };
-    // Binning shifts hinted glyphs off the pixel grid, which blurs text at 100–150 % (#2648).
+    // Binning shifts hinted glyphs off the pixel grid, which blurs text at 100–150 %.
     v.text_options.subpixel_binning = false;
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
@@ -749,7 +749,7 @@ mod tests {
         }
     }
 
-    /// Each glyph is one bitmap on whole pixels, not one per sub-pixel offset (#2648).
+    /// Each glyph is one bitmap on whole pixels, not one per sub-pixel offset.
     #[test]
     fn text_glyphs_sit_on_whole_pixels() {
         let bitmaps = |dark: bool, binning: bool| {
