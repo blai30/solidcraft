@@ -591,9 +591,7 @@ pub fn set_dark(dark: bool) {
 fn visuals(dark: bool) -> egui::Visuals {
     let t = Tokens::themed(dark, vision());
     let mut v = if dark { egui::Visuals::dark() } else { egui::Visuals::light() };
-    // Glyphs on whole pixels: binning draws each hinted glyph again at ¼, ½ and ¾ pixel offsets,
-    // which moves the stems hinting put on the pixel grid back off it, so on a 100–150 % display
-    // every stem was a two-pixel grey smear and all text looked blurry.
+    // Binning shifts hinted glyphs off the pixel grid, which blurs text at 100–150 % (#2648).
     v.text_options.subpixel_binning = false;
     v.panel_fill = t.panel;
     v.window_fill = t.panel;
@@ -751,11 +749,9 @@ mod tests {
         }
     }
 
-    /// Every glyph is drawn from one bitmap on whole pixels, not again at a fraction of a pixel
-    /// that smears its hinted stems: text looked blurry at 100–150 % display scale.
+    /// Each glyph is one bitmap on whole pixels, not one per sub-pixel offset (#2648).
     #[test]
     fn text_glyphs_sit_on_whole_pixels() {
-        // How many atlas bitmaps a line of one repeated glyph is drawn from.
         let bitmaps = |dark: bool, binning: bool| {
             let ctx = egui::Context::default();
             ctx.set_theme(if dark { egui::Theme::Dark } else { egui::Theme::Light });
